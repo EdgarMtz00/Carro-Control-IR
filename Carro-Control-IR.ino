@@ -3,7 +3,7 @@
 int pinRec=13;
 
 IRrecv receptor(pinRec);
-decode_results *resultados;
+decode_results resultados;
 
 void setup(){
 	Serial.begin(9600);
