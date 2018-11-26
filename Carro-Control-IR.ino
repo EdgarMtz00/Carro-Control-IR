@@ -21,6 +21,7 @@ void setup(){
 	Serial.begin(9600);
 	receptor.enableIRIn();
 	Serial.println("Receptor habilitado...");
+
 	digitalWrite(M1Izq,LOW);
 	digitalWrite(M1Der,LOW);
 	digitalWrite(M2Izq,LOW);
@@ -39,18 +40,26 @@ void encender(){
 }
 
 void arrancar(){
-	if(encendido & marcha){
-		digitalWrite(M1Izq,LOW);
-		digitalWrite(M1Der,LOW);
-		digitalWrite(M2Izq,LOW);
-		digitalWrite(M2Der,LOW);
-		marcha = false;
-	}else if(!marcha){
-		digitalWrite(M1Izq,HIGH);
-		digitalWrite(M1Der,LOW);
-		digitalWrite(M2Izq,HIGH);
-		digitalWrite(M2Der,LOW);
-		marcha = true;
+	if(encendido){
+		if(marcha){
+			digitalWrite(M1Izq,LOW);
+			digitalWrite(M1Der,LOW);
+			digitalWrite(M2Izq,LOW);
+			digitalWrite(M2Der,LOW);
+			marcha = false;
+		}else if(!reversa){
+			digitalWrite(M1Izq,HIGH);
+			digitalWrite(M1Der,LOW);
+			digitalWrite(M2Izq,HIGH);
+			digitalWrite(M2Der,LOW);
+			marcha = true;
+		}else if(reversa){
+			digitalWrite(M1Izq,LOW);
+			digitalWrite(M1Der,HIGH);
+			digitalWrite(M2Izq,LOW);
+			digitalWrite(M2Der,HIGH);
+			marcha = true;
+		}
 	}
 }
 
@@ -69,21 +78,53 @@ void bajarVel(){
 }
 
 void girar(bool dir){ //0 derecha | 1 izquierda
-	if(encendido & !reversa){
-		digitalWrite(M1Izq, !dir);
-		digitalWrite(M2Izq, dir);
-	}else if(reversa){
+	if(encendido){
+		if(!reversa){
+			digitalWrite(M1Izq, !dir);
+			digitalWrite(M2Izq, dir);
+		}else if(reversa){
+			digitalWrite(M1Der, dir);
+			digitalWrite(M2Der, !dir);
+		}
+		delay(100);
+		receptor.resume();
+		if (receptor.decode_results(&resultados))
+		{
+			if (resultados.value==valorPrev || resultados.value==0xFFFFFFFF)
+			{
+				girar(dir);
+			}else{
+				if(!reversa){
+					digitalWrite(M1Izq, HIGH);
+					digitalWrite(M2Izq, HIGH);
+				}else if(reversa){
+					digitalWrite(M1Der, HIGH);
+					digitalWrite(M2Der, HIGH);
+				}
+				loop();
+			}
+		}
+		
+	}
+}
+
+void cambiarSentido(bool dir){ //0 adelante | 1 atras
+	if (encendido){
 		digitalWrite(M1Der, dir);
-		digitalWrite(M2Der, !dir);
+		digitalWrite(M1Izq, !dir);
+		digitalWrite(M2Der, dir);
+		digitalWrite(M2Izq, !dir);
+		reversa = dir;
 	}
 }
 
 void loop(){
 	if(receptor.decode(&resultados)){
-		if(resultado.value == 0XFFFFFF){
-			reultado.value = valorPrev; 
+		if(resultados.value == 0XFFFFFFFF){
+			reultados.value = valorPrev; 
 		}
-		switch(resultado.value){
+		valorPrev = resultado.value;
+		switch(resultados.value){
 			case 0xFFA25D: //Power
 				encender();
 				break;
@@ -102,14 +143,15 @@ void loop(){
 			case 0xFF22DD: //Prev
 				girar(1);
 				break;
-			case 0xFF906F: //up
-				cambiarSentido();
+			case 0xFF906F: //Up
+				cambiarSentido(0);
+				break;			
+			case 0xFFE01F: //Down
+				cambiarSentido(1);
 				break;
-			case 
 			default:
 				break;
 		}
-		valorPrev = resultado.value;
 		receptor.resume();
 	}
 }
