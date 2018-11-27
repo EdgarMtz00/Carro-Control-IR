@@ -1,11 +1,13 @@
 #include <IRremote.h>
 
-const int pinRec=13;
-const int pinVel=1;
-const int M1Izq=3;	//avanzar		derecha
-const int M1Der=4;	//retroceder
-const int M2Izq=5;	//avanzar		izquierda
-const int M2Der=6;	//retroceder
+const int pinRec = 13;
+const int pinVel = 1;
+const int M1Izq = 3;	//avanzar		derecha
+const int M1Der = 4;	//retroceder
+const int M2Izq = 5;	//avanzar		izquierda
+const int M2Der = 6;	//retroceder
+const int pinBocina = 7;
+
 
 IRrecv receptor(pinRec);
 decode_results resultados;
@@ -148,6 +150,9 @@ void loop(){
 				break;			
 			case 0xFFE01F: //Down
 				cambiarSentido(1);
+				break;
+			case 0xFFE21D: //Func
+				pitar();
 				break;
 			default:
 				break;
